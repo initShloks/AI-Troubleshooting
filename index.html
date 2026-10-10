@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faultline Expert System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><div class="mark" aria-hidden="true">⊢</div><div><b>Faultline</b><br><span>FOL expert system</span></div></div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="diagnose">Diagnose</button>
+      <button class="tab" role="tab" data-tab="kb">Knowledge base</button>
+      <button class="tab" role="tab" data-tab="lab">Inference lab</button>
+      <button class="tab" role="tab" data-tab="unify">Unification</button>
+      <button class="tab" role="tab" data-tab="res">Resolution</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel" id="p-diagnose"></section>
+  <section class="panel" id="p-kb" hidden></section>
+  <section class="panel" id="p-lab" hidden></section>
+  <section class="panel" id="p-unify" hidden></section>
+  <section class="panel" id="p-res" hidden></section>
+</main>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
