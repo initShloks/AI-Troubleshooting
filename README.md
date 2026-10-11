@@ -2,6 +2,10 @@
 
 A rule-based expert system for laptop faults, built on first-order logic.
 
+The diagnosis flow asks targeted questions, shows its proof and certainty score,
+and can download a plain-text report with the conclusion, recommended steps,
+answers, and supporting rule.
+
 ## Files
 
 | File | Contents |
@@ -10,6 +14,9 @@ A rule-based expert system for laptop faults, built on first-order logic.
 | `styles.css` | All styling (light and dark themes) |
 | `engine.js` | Logic engine: terms, parser, knowledge base, unification, backward chaining, forward chaining, resolution |
 | `app.js` | UI: rendering, state, event handling |
+
+Custom rules and facts are validated as a complete submission before they are
+added, so a rejected multi-line entry does not leave partial changes behind.
 
 ## Run it in VS Code
 

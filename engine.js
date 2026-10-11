@@ -330,19 +330,27 @@ function buildKB(customSrcs) {
 }
 function addCustom(src) {
   const prog = parseProgram(src);
-  const added = [];
+  // Validate the entire submission before mutating the live KB. A duplicate
+  // in the final line must not leave earlier rules from the same paste behind.
+  const stagedRules = [], stagedFacts = [];
   prog.rules.forEach(r => {
-    if (!r.id) { let n = 1; while (KB.rules.some(x => x.id === 'c' + n)) n++; r.id = 'c' + n; }
-    if (KB.rules.some(x => x.id === r.id)) throw new Error(`Rule id “${r.id}” is already used`);
+    if (!r.id) {
+      let n = 1;
+      while (KB.rules.some(x => x.id === 'c' + n) || stagedRules.some(x => x.id === 'c' + n)) n++;
+      r.id = 'c' + n;
+    }
+    if (KB.rules.some(x => x.id === r.id) || stagedRules.some(x => x.id === r.id)) throw new Error(`Rule id “${r.id}” is already used`);
     r.custom = true; r.src = `${r.id} [${r.cf}]: ${r.body.map(litStr).join(', ').replace(/¬/g, 'not ')} => ${litStr(r.head)}.`;
-    KB.rules.push(r); added.push(r);
+    stagedRules.push(r);
   });
   prog.facts.forEach(f => {
-    if (KB.facts.some(x => atomKey(x) === atomKey(f))) throw new Error(`Fact ${litStr(f)} is already in the knowledge base`);
-    f.custom = true; f.src = atomKey(f) + '.'; KB.facts.push(f); added.push(f);
+    if (KB.facts.some(x => atomKey(x) === atomKey(f)) || stagedFacts.some(x => atomKey(x) === atomKey(f))) throw new Error(`Fact ${litStr(f)} is already in the knowledge base`);
+    f.custom = true; f.src = atomKey(f) + '.'; stagedFacts.push(f);
   });
-  if (!added.length) throw new Error('Nothing to add');
-  return added;
+  if (!stagedRules.length && !stagedFacts.length) throw new Error('Nothing to add');
+  KB.rules.push(...stagedRules);
+  KB.facts.push(...stagedFacts);
+  return [...stagedRules, ...stagedFacts];
 }
 
 /* ---------- Backward chaining (SLD resolution with question asking) ---------- */

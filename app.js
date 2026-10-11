@@ -38,6 +38,7 @@ const S = {
   intakeMsg: null,
   sym: null, answers: {}, asked: [], pending: null, result: null,
   kbFilter: 'all', kbMsg: null, kbDraft: '',
+  reportMsg: null,
   lab: { scenario: 'wifi-brief', mode: 'forward', fcShown: null, query: 'fault(wifi, X)', bc: null, sel: 0, err: null },
   uni: { a: 'knows(john, X)', b: 'knows(Y, mother(Y))' },
   res: { scenario: 'wifi-brief', query: 'fault(wifi, X)', out: null, err: null },
@@ -51,7 +52,7 @@ const scenGoal = k => k === 'session' ? (S.sym ? `fault(${S.sym}, X)` : 'fault(w
    DIAGNOSE
    ===================================================================== */
 function startSymptom(id) {
-  S.sym = id; S.answers = {}; S.asked = []; S.result = null; S.pending = null;
+  S.sym = id; S.answers = {}; S.asked = []; S.result = null; S.pending = null; S.reportMsg = null;
   runInterview();
 }
 function runInterview() {
@@ -106,7 +107,7 @@ function intakeH() {
       ${S.intakeMsg ? `<span class="msg err">${esc(S.intakeMsg)}</span>` : ''}</div>
   </div>
   <div><h3 style="margin-top:6px">Symptoms</h3>
-  <div class="sym-grid">${SYMPTOMS.map(s => `<button class="sym" data-act="pick" data-sym="${s.id}"><b>${esc(s.t)}</b><code>?- fault(${s.id}, X)</code></button>`).join('')}</div></div>`;
+  <div class="sym-grid">${SYMPTOMS.map(s => `<button class="sym" data-act="pick" data-sym="${s.id}"><b>${esc(s.t)}</b><span>${esc(s.d)}</span><code>?- fault(${s.id}, X)</code></button>`).join('')}</div></div>`;
 }
 
 function questionH(sym) {
@@ -165,10 +166,35 @@ function resultH(sym) {
     <div class="scroll"><ul class="tree">${treeH(r.node)}</ul></div>
     ${r.others.length ? `<h3>Other matches</h3><ul style="margin:0;padding-left:20px">${r.others.map(o => `<li>${esc((FAULTS[o.f] || { t: humanize(o.f) }).t)} <span class="muted">(${pct(o.cf)})</span></li>`).join('')}</ul>` : ''}
     <div class="row" style="margin-top:20px">
+      <button class="btn" data-act="report">Download report</button>
       <button class="btn primary" data-act="to-lab">Inference lab</button>
       <button class="btn" data-act="to-res">Resolution</button>
+      ${S.reportMsg ? `<span class="msg ok" role="status">${esc(S.reportMsg)}</span>` : ''}
     </div>
   </div>`;
+}
+
+function downloadReport() {
+  if (!S.result || S.result.none) return;
+  const r = S.result, info = FAULTS[r.fault] || { t: humanize(r.fault), s: 'Concluded by a custom rule.', steps: [] };
+  const severity = sevOf(r.fault);
+  const answers = S.asked.map((a, i) => `${i + 1}. ${ASK[a.lit.p].q} — ${valText(a.v)}`);
+  const report = [
+    'FAULTLINE — TROUBLESHOOTING REPORT',
+    `Generated: ${new Date().toLocaleString()}`,
+    '', `Diagnosis: ${info.t}`, `Fault: ${r.fault}`, `Severity: ${severity}`, `Certainty: ${pct(r.cf)}`,
+    '', info.s, '', 'RECOMMENDED STEPS',
+    ...(info.steps.length ? info.steps.map((s, i) => `${i + 1}. ${s}`) : ['No repair steps are listed for this custom conclusion.']),
+    '', 'ANSWERS', ...(answers.length ? answers : ['No interview answers recorded.']),
+    '', `Rule support: ${r.node.rule ? r.node.rule.id : 'knowledge base'}`,
+    'Generated locally by Faultline. Use this as a troubleshooting aid, not a substitute for qualified repair.'
+  ].join('\n');
+  const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url; link.download = `faultline-${S.sym}-${r.fault}.txt`;
+  document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  S.reportMsg = 'Report downloaded';
+  renderDiagnose();
 }
 
 function logH() {
@@ -451,8 +477,9 @@ document.addEventListener('click', ev => {
     }
     case 'pick': S.describe = ($('#desc') || {}).value || S.describe; startSymptom(t.dataset.sym); break;
     case 'answer': answer(t.dataset.v === 'yes' ? true : t.dataset.v === 'no' ? false : 'unknown'); break;
+    case 'report': downloadReport(); break;
     case 'change': changeAnswer(+t.dataset.i); break;
-    case 'restart': S.sym = null; S.answers = {}; S.asked = []; S.result = null; S.pending = null; renderDiagnose(); break;
+    case 'restart': S.sym = null; S.answers = {}; S.asked = []; S.result = null; S.pending = null; S.reportMsg = null; renderDiagnose(); break;
     case 'to-lab': S.lab.scenario = 'session'; S.lab.query = scenGoal('session'); S.lab.bc = null; S.lab.fcShown = 0; S.lab.mode = 'forward'; show('lab'); window.scrollTo(0, 0); break;
     case 'to-res': S.res.scenario = 'session'; S.res.query = scenGoal('session'); S.res.out = null; show('res'); window.scrollTo(0, 0); break;
     case 'kbf': S.kbFilter = t.dataset.d; renderKB(); break;
